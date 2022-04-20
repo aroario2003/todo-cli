@@ -27,7 +27,11 @@ setup(
        ],
        packages=["todo-cli"],
        install_requires=["notify-send", "datetime", "pytest-shutil", "argparse"],
-       console_scripts=["todo-cli=todo-cli.main:main"]
+       entry_points={
+           "console_scripts": [
+               "todo-cli = todo-cli.todo-cli:main"
+           ]
+       },
        python_requires=">=3.9")
 
 
