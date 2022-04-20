@@ -12,11 +12,12 @@ def man():
 
 setup(
        name="todo-cli",
-       version=ver,
+       version="0.0.1",
        author="Alejandro Rosario",
        author_email="borkbork1031@gmail.com",
        description="A command line tool for managing your to-do lists and tasks",
        long_description=man(),
+       package_dir={'': 'src'},
        long_description_content_type="text/troff",
        classifiers=[
            "todo-lists :: Python :: to-do lists",
