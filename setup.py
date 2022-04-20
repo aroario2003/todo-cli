@@ -1,11 +1,10 @@
 import os
 from setuptools import setup
-from main import version as ver
 
 def man():
     home = os.path.expanduser("~")
     real_file = "/usr/share/man/man1/todo-cli"
-    opt_file = home + "todo-cli/todo-cli.1"
+    opt_file = home + "/todo-cli/todo-cli.1"
     if os.path.exists(real_file):
         os.system("man " + real_file)
     elif not os.path.exists('/usr/share/man/man1/todo-cli'):
@@ -25,8 +24,7 @@ setup(
            "Organization :: Daemons :: Programming Language"
        ],
        packages=["todo-cli"],
-       install_requires=["notify-send", "threading", "datetime", "pathlib", "shutil", "argparse"],
-       entry_points=["todo-cli=todo-cli:main"],
+       install_requires=["notify-send", "datetime", "pytest-shutil", "argparse"],
        python_requires=">=3.9")
 
 
