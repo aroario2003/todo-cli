@@ -1,5 +1,6 @@
 import os
-from setuptools import setup
+from setuptools import setup 
+import src.todo-cli as todo-cli
 
 def man():
     home = os.path.expanduser("~")
@@ -26,6 +27,7 @@ setup(
        ],
        packages=["todo-cli"],
        install_requires=["notify-send", "datetime", "pytest-shutil", "argparse"],
+       console_scripts=["todo-cli=todo-cli.main:main"]
        python_requires=">=3.9")
 
 
