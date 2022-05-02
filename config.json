@@ -1,0 +1,23 @@
+{
+"config": {
+
+   "todo-cli": {
+
+      "notif-interval": "4",    
+
+      "check-interval": "1d",
+      
+      "compare-unit": "week",
+
+      "email-address": "youremail@gmail.com",
+
+      "email-password": "yourpassword",
+
+      "phone-number": "1111111111",
+
+      "phone-carrier": "yourcarrier"
+    }
+
+  }
+
+}
