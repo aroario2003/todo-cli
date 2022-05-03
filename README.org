@@ -1,3 +1,38 @@
+#+TITLE: Todo-Cli
+#+AUTHOR: Alejandro Rosario
+#+PROPERTY: header-args :tangle main.py
+
+* Table of Contents :toc:
+- [[#introduction][Introduction]]
+- [[#imports][Imports]]
+- [[#add-arguments][Add Arguments]]
+- [[#basic-configuration][Basic Configuration]]
+- [[#the-version-function][The Version Function]]
+- [[#the-create-to-do-list-function][The Create to-do List Function]]
+- [[#the-add-to-do-item-function][The Add to-do Item Function]]
+- [[#the-remove-to-do-list-function][The Remove to-do List Function]]
+- [[#the-convert-interval-function][The Convert Interval Function]]
+- [[#the-compare-date-function][The Compare Date Function]]
+- [[#the-remind-if-due-function][The Remind if Due Function]]
+- [[#the-send-sms-if-due-function][The Send SMS if Due Function]]
+- [[#the-start-notification-daemon-function][The Start Notification Daemon Function]]
+- [[#the-start-message-daemon-function][The Start Message Daemon Function]]
+- [[#the-print-table-function][The Print Table Function]]
+- [[#the-mark-as-done-function][The Mark as Done Function]]
+- [[#the-mark-as-incomplete-function][The Mark as Incomplete Function]]
+- [[#the-add-date-function][The Add Date Function]]
+- [[#the-print-info-function][The Print Info Function]]
+- [[#the-print-todo-function][The Print Todo Function]]
+- [[#the-clear-history-function][The Clear History Function]]
+- [[#the-main-function][The Main Function]]
+
+* Introduction
+This program was made so that everyone can keep track of what they need to do from the command line. This program is a final project for my computer science class and also a public project so that everyone else may benefit from it.
+
+* Imports
+These are the libraries that are required for this program to work. Each and every one of these must be at the top of the file for the program to work properly.
+
+#+BEGIN_SRC python
 #!/usr/bin/env python3
 import os
 import re
@@ -11,7 +46,12 @@ from datetime import date, datetime
 from threading import Thread
 from tabulate import tabulate
 from notify import notification as notif
+#+END_SRC
 
+* Add Arguments
+This code block adds all command line arguments to a parser which keeps track of all arguments which may be given to the program.
+
+#+BEGIN_SRC python
 parser = ap.ArgumentParser()
 parser.add_argument('-c', '--clear', action="store_true", help="Clear all to-do lists made by this program")
 parser.add_argument('-p', '--print', metavar="todo-list", help="Print the specified to-do list")
@@ -29,7 +69,12 @@ parser.add_argument('-d', '--daemonize', action="store_true", help="Start a back
 parser.add_argument('-me', '--message', action="store_true", help="Start a background process that checks if something is due in the interval specified and send a sms message if so")
 parser.add_argument('-pt', '--print-table', action="store_true", help="Print a table of all items with information about each")
 args = parser.parse_args()
+#+END_SRC
 
+* Basic Configuration
+These are different vaiables that will be needed in order for certain functions within the program to work such as the carrier of the user if they want to use the messaging feature as well as intervals for the reminder functionality.
+
+#+BEGIN_SRC python
 HOME = os.path.expanduser('~')
 DIRECTORY = HOME + "/.local/share/todo/"
 VERSION = "0.0.1"
@@ -53,15 +98,30 @@ with open (CONFIGURATION, "r") as f:
     EMAIL_PASS = config["config"]["todo-cli"]["email-password"]
     PHONE_NUMBER = config["config"]["todo-cli"]["phone-number"]
     PHONE_CARRIER = config["config"]["todo-cli"]["phone-carrier"]
+    #+END_SRC
 
+* The Version Function
+This function prints out the version to todo-cli to the console so that the user can keep track of it.
+
+#+BEGIN_SRC python
 def print_version() -> None:
     print(f"todo-cli {VERSION}")
+#+END_SRC
 
+* The Create to-do List Function
+This function creates a to-do list if it does not already exist and names it "todo-name.txt" where name is the name of the to-do list and the argument given to the *-cr* flag.
+
+#+BEGIN_SRC python
 def create_todo(create) -> None:
     if not os.path.exists(DIRECTORY):
         os.mkdir(DIRECTORY)
     Path(DIRECTORY + "todo-" + create + ".txt").touch()
+#+END_SRC
 
+* The Add to-do Item Function
+This function adds a to-do item to a specified list and also makes sure that the list specified exists and if not creates it.
+
+#+BEGIN_SRC python
 def add_item(todo_list: str, todo_item: str) -> None:
     name = todo_list
     todo_list = "todo-" + name + ".txt"
@@ -69,7 +129,12 @@ def add_item(todo_list: str, todo_item: str) -> None:
         os.mkdir(DIRECTORY)
     with open (DIRECTORY + todo_list, "a") as f:
         f.write(todo_item + "\n")
+#+END_SRC
 
+* The Remove to-do List Function
+This function removes a to-do list from the directory where the to-do list files are stored.
+
+#+BEGIN_SRC python
 def remove_list(todo_list: str) -> None:
     name = todo_list
     todo_list = "todo-" + name + ".txt"
@@ -77,7 +142,12 @@ def remove_list(todo_list: str) -> None:
         for todo in file[2]:
             if todo == todo_list:
                 os.remove(DIRECTORY + todo)
+#+END_SRC
 
+* The Convert Interval Function
+This function converts any unit of time to seconds so that other program functionality can work properly.
+
+#+BEGIN_SRC python
 def convert_interval(interval) -> int:
     number = re.compile('[0-9]')
     amount = number.search(interval)
@@ -97,7 +167,12 @@ def convert_interval(interval) -> int:
         return int(amount) * 604800
     elif unit == "M":
        return int(amount) * 2628000
+#+END_SRC
 
+* The Compare Date Function
+This function takes a date in the format *mm/dd/yyyy* and compares it to the current date and returns the result in seconds.
+
+#+BEGIN_SRC python
 def compare_date(due_date, unit: str = COMPARE_UNIT) -> int:
     today = date.today().strftime("%m/%d/%Y")
     today = datetime.strptime(today, "%m/%d/%Y")
@@ -112,7 +187,12 @@ def compare_date(due_date, unit: str = COMPARE_UNIT) -> int:
         return (due - today).days // 7
     elif unit == "month":
         return (due - today).days // 30
+#+END_SRC
 
+* The Remind if Due Function
+This function checks if the amount of time in seconds returned by the compare date function is equal to the amount of time before the due date to give a reminder, specified by the user in the *config.json* file. If they are the program will send a notification reminding the user of said to-do item that is due in that interval of time.
+
+#+BEGIN_SRC python
 def remind_if_due() -> None:
     display = os.environ["DISPLAY"]
     todo_lists = os.listdir(DIRECTORY)
@@ -145,7 +225,12 @@ def remind_if_due() -> None:
                         elif compare_date(result, unit = COMPARE_UNIT) < 0:
                                 print("hello", end='')
     time.sleep(convert_interval(CHECK_INTERVAL))
+#+END_SRC
 
+* The Send SMS if Due Function
+This function has similiar functionality to the remind if due function except it reminds the user through text message instead of a notification on the computer itself.
+
+#+BEGIN_SRC python
 def send_sms_if_due() -> None:
     todo_lists = os.listdir(DIRECTORY)
     for file in todo_lists:
@@ -173,19 +258,34 @@ def send_sms_if_due() -> None:
                         except:
                             print("Error: unable to send text")
     time.sleep(convert_interval(CHECK_INTERVAL))
+#+END_SRC
 
+* The Start Notification Daemon Function
+This function starts a background process that runs the remind if due function every interval specified by the user in the *config.json* file.
+
+#+BEGIN_SRC python
 def start_notification_daemon() -> None:
     while True:
         reminder = Thread(target=remind_if_due, daemon=True)
         reminder.start()
         reminder.join()
+#+END_SRC
 
+* The Start Message Daemon Function
+This function is the exact same as the start notification daemon function except it runs the send sms if due function.
+
+#+BEGIN_SRC python
 def start_message_daemon() -> None:
     while True:
         message_reminder = Thread(target=send_sms_if_due, daemon=True)
         mesage_reminer.start()
         message_reminder.join()
+#+END_SRC
 
+* The Print Table Function
+This function prints out an organised table of every to-do list and every to-do item within that list with due date and if it is done or not.
+
+#+BEGIN_SRC python
 def print_table():
     table = [['list name', 'item', 'due date', 'is done']]
     todo_lists = os.listdir(DIRECTORY)
@@ -210,7 +310,12 @@ def print_table():
                     is_done = False
                 table.append([file.strip("todo-").strip(".txt"), item, date, is_done])
     print(tabulate(table, headers='firstrow', tablefmt='fancy_grid'))
+#+END_SRC
 
+* The Mark as Done Function
+This function marks any item within any to-do list as done by representing it with a check mark next to the specified to-do item.
+
+#+BEGIN_SRC python
 def mark_as_done(todo_list: str, todo_item: str) -> None:
     name = todo_list
     todo_list = "todo-" + name + ".txt"
@@ -228,7 +333,12 @@ def mark_as_done(todo_list: str, todo_item: str) -> None:
                     print("This item is already marked as done")
     with open (DIRECTORY + todo_list, "w") as f:
         f.writelines(lines)
+#+END_SRC
 
+* The Mark as Incomplete Function
+This function marks any item from any to-do list as incomplete by representing with an x next to the specified item.
+
+#+BEGIN_SRC python
 def mark_as_incomplete(todo_list: str, todo_item: str) -> None:
     name = todo_list
     todo_list = "todo-" + name + ".txt"
@@ -242,7 +352,12 @@ def mark_as_incomplete(todo_list: str, todo_item: str) -> None:
                 print("This item has been marked as done")
     with open (DIRECTORY + todo_list, "w") as f:
         f.writelines(lines)
+#+END_SRC
 
+* The Add Date Function
+This function adds a due date to any item within any to-do list in the format *mm/dd/yyyy*.
+
+#+BEGIN_SRC python
 def add_date(todo_list: str, todo_item: str, date_due) -> None:
     name = todo_list
     todo_list = "todo-" + name + ".txt"
@@ -254,7 +369,12 @@ def add_date(todo_list: str, todo_item: str, date_due) -> None:
                 lines[lines.index(line)] = newline
     with open (DIRECTORY + todo_list, "w") as f:
         f.writelines(lines)
+#+END_SRC
 
+* The Print Info Function
+This function prints out all to-do lists with all to-do items but without the table.
+
+#+BEGIN_SRC python
 def print_info(todo_list: str) -> None:
     name = todo_list
     todo_list = "todo-" + name + ".txt"
@@ -262,7 +382,11 @@ def print_info(todo_list: str) -> None:
         lines = f.readlines()
         for line in lines:
             print(line)
+#+END_SRC
 
+* The Print Todo Function
+This function prints all to-do lists that currently exist in the to-do list directory by name.
+#+BEGIN_SRC python
 def print_todo(todo_list: str) -> None:
     name = todo_list
     todo_list = "todo-" + name + ".txt"
@@ -273,13 +397,23 @@ def print_todo(todo_list: str) -> None:
         with open (DIRECTORY + todo_list, "r") as f:
             for line in f:
                 print("\t" + re.sub('[0-9]|/', '', line))
+#+END_SRC
 
+* The Clear History Function
+This function checks if the size of a to-do list and if it is greater than 0 than it will write nothing to said to-do so the the user may reuse it later or delete it.
+
+#+BEGIN_SRC python
 def clear_history() -> None:
     for file in os.listdir(DIRECTORY):
         if os.path.getsize(DIRECTORY + file) > 0:
             with open (DIRECTORY + file, "w") as f:
                 f.write("")
+#+END_SRC
 
+* The Main Function
+This function checks if a certain argument is given to the program and runs the corresponding function(s) if it is.
+
+#+BEGIN_SRC python
 def main():
     if args.clear:
        clear_history()
@@ -314,3 +448,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+#+END_SRC
