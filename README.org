@@ -4,6 +4,7 @@
 
 * Table of Contents :toc:
 - [[#introduction][Introduction]]
+- [[#installation][Installation]]
 - [[#imports][Imports]]
 - [[#add-arguments][Add Arguments]]
 - [[#basic-configuration][Basic Configuration]]
@@ -28,6 +29,28 @@
 
 * Introduction
 This program was made so that everyone can keep track of what they need to do from the command line. This program is a final project for my computer science class and also a public project so that everyone else may benefit from it.
+
+* Installation
+This program maybe installed as follows:
+*Please read the NOTE below before continuing to execute these commands*
+
+#+BEGIN_SRC bash
+git clone https://gitlab.com/aroario2003/todo-cli.git && \
+cd todo-cli && \
+make && \
+sudo make install
+#+END_SRC
+
+*NOTE* The makefile for this program is not yet available, so for now you may install it as follows:
+
+#+BEGIN_SRC bash
+git clone https://gitlab.com/aroario2003/todo-cli.git && \
+cd todo-cli && \
+mkdir -p ~/.config/todo-cli && \
+cp config.json ~/.config/todo-cli && \
+mkdir -p ~/.local/share/todo && \
+cp main.py ~/.local/share/todo/todo-cli
+#+END_SRC
 
 * Imports
 These are the libraries that are required for this program to work. Each and every one of these must be at the top of the file for the program to work properly.
